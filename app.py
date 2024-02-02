@@ -28,14 +28,13 @@ def list_objects():
         return f"Error listing objects: {str(e)}"
 
     return render_template('objects.html', objects=objects, bucket_name=bucket_name)
-    
 
-@app.route('/logs', methods=['POST'])
+@app.route('/logs', methods=['POST', 'GET'])
 def display_logs():
-    access_key = request.form['access_key']
-    secret_access_key = request.form['secret_access_key']
-    bucket_name = request.form['bucket_name']
-    object_key = request.form['object_key']
+    access_key = request.form['access_key'] if request.method == 'POST' else request.args.get('access_key')
+    secret_access_key = request.form['secret_access_key'] if request.method == 'POST' else request.args.get('secret_access_key')
+    bucket_name = request.form['bucket_name'] if request.method == 'POST' else request.args.get('bucket_name')
+    object_key = request.form['object_key'] if request.method == 'POST' else request.args.get('object_key')
 
     # Authenticate with AWS
     session = boto3.Session(
@@ -51,7 +50,7 @@ def display_logs():
     except Exception as e:
         logs = f"Error retrieving logs: {str(e)}"
 
-    return render_template('logs.html', logs=logs)
+    return render_template('logs.html', logs=logs, object_key=object_key)
 
 if __name__ == '__main__':
     app.run(debug=True)

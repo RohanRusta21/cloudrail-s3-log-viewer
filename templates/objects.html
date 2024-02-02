@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 Bucket Objects</title>
+</head>
+<body>
+    <h1>Objects in S3 Bucket "{{ bucket_name }}"</h1>
+    <ul>
+        {% for object in objects %}
+            <li><a href="/logs" onclick="event.preventDefault(); document.getElementById('object_key').value = '{{ object['Key'] }}'; document.getElementById('object_form').submit();">{{ object['Key'] }}</a></li>
+        {% endfor %}
+    </ul>
+    <form id="object_form" action="/logs" method="post" style="display: none;">
+        <input type="hidden" id="object_key" name="object_key">
+        <input type="hidden" name="access_key" value="{{ request.form['access_key'] }}">
+        <input type="hidden" name="secret_access_key" value="{{ request.form['secret_access_key'] }}">
+        <input type="hidden" name="bucket_name" value="{{ bucket_name }}">
+    </form>
+</body>
+</html>

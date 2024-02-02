@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get S3 Logs</title>
+</head>
+<body>
+    <h1>Enter AWS Credentials and Bucket Name</h1>
+    <form action="/objects" method="post">
+        <label for="access_key">Access Key:</label><br>
+        <input type="text" id="access_key" name="access_key"><br>
+        <label for="secret_access_key">Secret Access Key:</label><br>
+        <input type="text" id="secret_access_key" name="secret_access_key"><br>
+        <label for="bucket_name">Bucket Name:</label><br>
+        <input type="text" id="bucket_name" name="bucket_name"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

@@ -1,16 +1,21 @@
+<!-- templates/objects.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S3 Bucket Objects</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Objects in S3 Bucket "{{ bucket_name }}"</h1>
-    <ul>
-        {% for object in objects %}
-            <li><a href="/logs?access_key={{ request.form['access_key'] }}&secret_access_key={{ request.form['secret_access_key'] }}&bucket_name={{ bucket_name }}&object_key={{ object['Key'] }}">{{ object['Key'] }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1 class="display-4 text-center my-5">Objects in Bucket "{{ bucket_name }}"</h1>
+        <ul class="list-group">
+            {% for object in objects %}
+                <li class="list-group-item"><a href="/logs?access_key={{ request.form['access_key'] }}&secret_access_key={{ request.form['secret_access_key'] }}&bucket_name={{ bucket_name }}&object_key={{ object['Key'] }}">{{ object['Key'] }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 </body>
 </html>

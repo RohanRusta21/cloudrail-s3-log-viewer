@@ -1,20 +1,37 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get S3 Logs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Enter AWS Credentials and Bucket Name</h1>
-    <form action="/objects" method="post">
-        <label for="access_key">Access Key:</label><br>
-        <input type="text" id="access_key" name="access_key"><br>
-        <label for="secret_access_key">Secret Access Key:</label><br>
-        <input type="text" id="secret_access_key" name="secret_access_key"><br>
-        <label for="bucket_name">Bucket Name:</label><br>
-        <input type="text" id="bucket_name" name="bucket_name"><br><br>
-        <input type="submit" value="List Objects">
-    </form>
+    <div class="container">
+        <h1 class="display-4 text-center my-5">AWS S3 Log Viewer</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form action="/objects" method="post">
+                    <div class="mb-3">
+                        <label for="access_key" class="form-label">Access Key</label>
+                        <input type="text" id="access_key" name="access_key" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="secret_access_key" class="form-label">Secret Access Key</label>
+                        <input type="text" id="secret_access_key" name="secret_access_key" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bucket_name" class="form-label">Bucket Name</label>
+                        <input type="text" id="bucket_name" name="bucket_name" class="form-control">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">List Objects</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

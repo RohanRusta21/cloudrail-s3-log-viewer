@@ -13,5 +13,38 @@
         <h1 class="display-4 text-center my-5">Logs from S3 Object "{{ object_key }}"</h1>
         <pre>{{ logs }}</pre>
     </div>
+
+    <!-- Chat interface -->
+    <div class="chat-container">
+        <div id="chat-area"></div>
+        <input type="text" id="user-input" placeholder="Enter your message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function sendMessage() {
+            var userInput = document.getElementById("user-input").value;
+            var chatArea = document.getElementById("chat-area");
+            chatArea.innerHTML += "<div class='user-message'>" + userInput + "</div>";
+
+            // Clear the input field
+            document.getElementById("user-input").value = '';
+
+            // Send the user input to the server for processing and receive the response
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: userInput })  // Send userInput as the prompt
+            })
+            .then(response => response.json())
+            .then(data => {
+                var responseText = data.message ? data.message : "Error: " + data.error;
+                chatArea.innerHTML += "<div class='assistant-message'>" + responseText + "</div>";
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 </body>
 </html>

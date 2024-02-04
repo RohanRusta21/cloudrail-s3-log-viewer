@@ -1,31 +1,64 @@
 /* static/styles.css */
 body {
     background-color: #f8f9fa;
+    font-family: Arial, sans-serif; /* Use a common sans-serif font */
 }
 
 .container {
     margin-top: 50px;
 }
 
-form {
-    background-color: #fff;
-    padding: 20px;
+.chat-container {
+    margin-top: 20px;
+    border: 1px solid #ccc;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Hide overflowing content */
 }
 
-.btn-primary {
-    width: 100%;
+#chat-area {
+    padding: 10px;
+    max-height: 300px; /* Limit the height of the chat area */
+    overflow-y: auto; /* Enable vertical scrolling */
 }
 
-.list-group-item {
+.user-message, .assistant-message {
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+}
+
+.user-message {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.assistant-message {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#user-input {
+    width: calc(100% - 80px); /* Adjust input width to fit button */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin: 0 10px 0 0; /* Add margin to the right */
+}
+
+#send-button {
+    width: 70px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: #fff;
     cursor: pointer;
+    transition: background-color 0.3s; /* Add transition for smoother hover effect */
 }
 
-pre {
-    white-space: pre-wrap;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+#send-button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Add box-shadow on hover for depth effect */
+}
+
 }

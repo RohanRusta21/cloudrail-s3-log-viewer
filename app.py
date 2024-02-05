@@ -12,12 +12,33 @@ def list_objects():
     access_key = request.form['access_key']
     secret_access_key = request.form['secret_access_key']
     bucket_name = request.form['bucket_name']
+    mfa_device_serial = request.form.get('mfa_device_serial')  # Get MFA device serial number
+    mfa_token_code = request.form.get('mfa_token_code')  # Get MFA token code
 
     # Authenticate with AWS
     session = boto3.Session(
         aws_access_key_id=access_key,
-        aws_secret_access_key=secret_access_key
+        aws_secret_access_key=secret_access_key,
+        aws_session_token=None,  # Ensure session token is initially None
     )
+
+    if mfa_device_serial and mfa_token_code:
+        # Assume role with MFA
+        sts_client = session.client('sts')
+        try:
+            response = sts_client.get_session_token(
+                DurationSeconds=3600,  # Adjust the duration as needed
+                SerialNumber=mfa_device_serial,
+                TokenCode=mfa_token_code
+            )
+            session = boto3.Session(
+                aws_access_key_id=response['Credentials']['AccessKeyId'],
+                aws_secret_access_key=response['Credentials']['SecretAccessKey'],
+                aws_session_token=response['Credentials']['SessionToken']
+            )
+        except Exception as e:
+            return f"Error authenticating with MFA: {str(e)}"
+
     s3_client = session.client('s3')
 
     # List objects in S3 bucket

@@ -57,26 +57,53 @@ def list_objects():
 
 @app.route('/logs', methods=['POST', 'GET'])
 def display_logs():
-    access_key = request.form['access_key'] if request.method == 'POST' else request.args.get('access_key')
-    secret_access_key = request.form['secret_access_key'] if request.method == 'POST' else request.args.get('secret_access_key')
-    bucket_name = request.form['bucket_name'] if request.method == 'POST' else request.args.get('bucket_name')
-    object_key = request.form['object_key'] if request.method == 'POST' else request.args.get('object_key')
+    if request.method == 'POST':
+        access_key = request.form['access_key']
+        secret_access_key = request.form['secret_access_key']
+        bucket_name = request.form['bucket_name']
+        object_key = request.form['object_key']
 
-    # Authenticate with AWS
-    session = boto3.Session(
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_access_key
-    )
-    s3_client = session.client('s3')
+        # Authenticate with AWS
+        session = boto3.Session(
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_access_key
+        )
+        s3_client = session.client('s3')
 
-    # Retrieve logs from S3 object
-    try:
-        response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-        logs = response['Body'].read().decode('utf-8', errors='replace')
-    except Exception as e:
-        logs = f"Error retrieving logs: {str(e)}"
+        # Retrieve logs from S3 object
+        try:
+            response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            logs = response['Body'].read().decode('utf-8', errors='replace')
+        except Exception as e:
+            logs = f"Error retrieving logs: {str(e)}"
 
-    return render_template('logs.html', logs=logs, object_key=object_key)
+        return render_template('logs.html', logs=logs, object_key=object_key)
+
+    else:
+        # Handle GET request with query parameters
+        access_key = request.args.get('access_key')
+        secret_access_key = request.args.get('secret_access_key')
+        bucket_name = request.args.get('bucket_name')
+        object_key = request.args.get('object_key')
+
+        if not all([access_key, secret_access_key, bucket_name, object_key]):
+            return "Missing parameters"
+
+        # Authenticate with AWS
+        session = boto3.Session(
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_access_key
+        )
+        s3_client = session.client('s3')
+
+        # Retrieve logs from S3 object
+        try:
+            response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            logs = response['Body'].read().decode('utf-8', errors='replace')
+        except Exception as e:
+            logs = f"Error retrieving logs: {str(e)}"
+
+        return render_template('logs.html', logs=logs, object_key=object_key)
 
 if __name__ == '__main__':
     app.run(debug=True)

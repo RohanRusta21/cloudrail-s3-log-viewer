@@ -46,7 +46,8 @@ def display_logs():
     # Retrieve logs from S3 object
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-        logs = response['Body'].read().decode('utf-8')
+        #logs = response['Body'].read().decode('utf-8')
+        logs = response['Body'].read().decode('utf-8', errors='replace')
     except Exception as e:
         logs = f"Error retrieving logs: {str(e)}"
 

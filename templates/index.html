@@ -34,6 +34,17 @@
                         <label for="bucket_name" class="form-label">Bucket Name</label>
                         <input type="text" id="bucket_name" name="bucket_name" class="form-control">
                     </div>
+                    <div class="mb-3">
+                        <label for="region" class="form-label">AWS Region</label>
+                        <select id="region" name="region" class="form-select">
+                            <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">EU (Ireland) - eu-west-1</option>
+                            <option value="ap-south-1">Asia Pacific (Mumbai) - ap-south-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <!-- Add more regions as necessary -->
+                        </select>
+                    </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
@@ -43,3 +54,4 @@
     </div>
 </body>
 </html>
+

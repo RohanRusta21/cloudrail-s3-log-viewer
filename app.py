@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session as flask_session
 import boto3
+import os
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Secret key for session management, can also be a static string
 
 @app.route('/')
 def index():
+    flask_session.permanent = True  # Ensures that the session is permanent (i.e., not cleared when the browser closes)
     return render_template('index.html')
 
 @app.route('/objects', methods=['GET', 'POST'])
@@ -13,97 +16,108 @@ def list_objects():
         access_key = request.form['access_key']
         secret_access_key = request.form['secret_access_key']
         bucket_name = request.form['bucket_name']
-        mfa_device_serial = request.form.get('mfa_device_serial')  # Get MFA device serial number
-        mfa_token_code = request.form.get('mfa_token_code')  # Get MFA token code
+        region = request.form['region']
+        mfa_device_serial = request.form.get('mfa_device_serial')
+        mfa_token_code = request.form.get('mfa_token_code')
 
-        # Authenticate with AWS
-        session = boto3.Session(
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_access_key,
-            aws_session_token=None,  # Ensure session token is initially None
-        )
+        # Store credentials and region in the Flask session
+        flask_session['access_key'] = access_key
+        flask_session['secret_access_key'] = secret_access_key
+        flask_session['bucket_name'] = bucket_name
+        flask_session['region'] = region
 
         if mfa_device_serial and mfa_token_code:
-            # Assume role with MFA
-            sts_client = session.client('sts')
-            try:
-                response = sts_client.get_session_token(
-                    DurationSeconds=3600,  # Adjust the duration as needed
-                    SerialNumber=mfa_device_serial,
-                    TokenCode=mfa_token_code
-                )
-                session = boto3.Session(
-                    aws_access_key_id=response['Credentials']['AccessKeyId'],
-                    aws_secret_access_key=response['Credentials']['SecretAccessKey'],
-                    aws_session_token=response['Credentials']['SessionToken']
-                )
-            except Exception as e:
-                return f"Error authenticating with MFA: {str(e)}"
+            flask_session['mfa_device_serial'] = mfa_device_serial
+            flask_session['mfa_token_code'] = mfa_token_code
 
-        s3_client = session.client('s3')
-
-        # List objects in S3 bucket
-        try:
-            response = s3_client.list_objects_v2(Bucket=bucket_name)
-            objects = response.get('Contents', [])
-        except Exception as e:
-            return f"Error listing objects: {str(e)}"
-
-        return render_template('objects.html', objects=objects, bucket_name=bucket_name)
+        return redirect('/show_objects')
 
     else:
-        # Handle GET request (e.g., redirect to index page)
         return render_template('index.html')
 
-@app.route('/logs', methods=['POST', 'GET'])
-def display_logs():
-    if request.method == 'POST':
-        access_key = request.form['access_key']
-        secret_access_key = request.form['secret_access_key']
-        bucket_name = request.form['bucket_name']
-        object_key = request.form['object_key']
+@app.route('/show_objects')
+def show_objects():
+    # Retrieve credentials from the Flask session
+    access_key = flask_session.get('access_key')
+    secret_access_key = flask_session.get('secret_access_key')
+    bucket_name = flask_session.get('bucket_name')
+    region = flask_session.get('region')
+    mfa_device_serial = flask_session.get('mfa_device_serial')
+    mfa_token_code = flask_session.get('mfa_token_code')
 
-        # Authenticate with AWS
-        session = boto3.Session(
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_access_key
-        )
-        s3_client = session.client('s3')
+    if not all([access_key, secret_access_key, bucket_name, region]):
+        return redirect('/')
 
-        # Retrieve logs from S3 object
+    # Authenticate with AWS using session data
+    session = boto3.Session(
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_access_key,
+        region_name=region
+    )
+
+    if mfa_device_serial and mfa_token_code:
+        sts_client = session.client('sts')
         try:
-            response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-            logs = response['Body'].read().decode('utf-8', errors='replace')
+            response = sts_client.get_session_token(
+                DurationSeconds=3600,
+                SerialNumber=mfa_device_serial,
+                TokenCode=mfa_token_code
+            )
+            session = boto3.Session(
+                aws_access_key_id=response['Credentials']['AccessKeyId'],
+                aws_secret_access_key=response['Credentials']['SecretAccessKey'],
+                aws_session_token=response['Credentials']['SessionToken'],
+                region_name=region
+            )
         except Exception as e:
-            logs = f"Error retrieving logs: {str(e)}"
+            return f"Error authenticating with MFA: {str(e)}"
 
-        return render_template('logs.html', logs=logs, object_key=object_key)
+    s3_client = session.client('s3')
 
-    else:
-        # Handle GET request with query parameters
-        access_key = request.args.get('access_key')
-        secret_access_key = request.args.get('secret_access_key')
-        bucket_name = request.args.get('bucket_name')
-        object_key = request.args.get('object_key')
+    # List objects in S3 bucket
+    try:
+        response = s3_client.list_objects_v2(Bucket=bucket_name)
+        objects = response.get('Contents', [])
+    except Exception as e:
+        return f"Error listing objects: {str(e)}"
 
-        if not all([access_key, secret_access_key, bucket_name, object_key]):
-            return "Missing parameters"
+    return render_template('objects.html', objects=objects, bucket_name=bucket_name)
 
-        # Authenticate with AWS
-        session = boto3.Session(
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_access_key
-        )
-        s3_client = session.client('s3')
+@app.route('/logs')
+def show_logs():
+    # Retrieve credentials from session instead of URL parameters
+    access_key = flask_session.get('access_key')
+    secret_access_key = flask_session.get('secret_access_key')
+    bucket_name = flask_session.get('bucket_name')
+    object_key = request.args.get('object_key')
+    region = flask_session.get('region')
 
-        # Retrieve logs from S3 object
-        try:
-            response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-            logs = response['Body'].read().decode('utf-8', errors='replace')
-        except Exception as e:
-            logs = f"Error retrieving logs: {str(e)}"
+    if not all([access_key, secret_access_key, bucket_name, object_key, region]):
+        return redirect('/')
 
-        return render_template('logs.html', logs=logs, object_key=object_key)
+    # Create session with AWS
+    session = boto3.Session(
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_access_key,
+        region_name=region
+    )
+    
+    s3_client = session.client('s3')
+
+    try:
+        # Get object from S3
+        response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+        content_type = response['ContentType']
+
+        if content_type.startswith('text') or content_type == 'application/json':
+            logs = response['Body'].read().decode('utf-8')
+        else:
+            logs = "This object format is not supported for display."
+
+    except Exception as e:
+        return f"Error fetching object: {str(e)}"
+
+    return render_template('logs.html', logs=logs, object_key=object_key)
 
 if __name__ == '__main__':
     app.run(debug=True)

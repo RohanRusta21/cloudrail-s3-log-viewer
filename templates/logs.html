@@ -1,4 +1,4 @@
-<!-- templates/logs.html -->
+<!-- templates/logs.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,4 +14,89 @@
         <pre>{{ logs }}</pre>
     </div>
 </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filtered Logs Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Logs for Object: {{ object_key }}</h1>
+    
+    {% if is_text_content %}
+        <form method="post">
+            <label for="date_from">Date From:</label>
+            <input type="date" id="date_from" name="date_from">
+
+            <label for="date_to">Date To:</label>
+            <input type="date" id="date_to" name="date_to">
+
+            <label for="log_level">Log Level:</label>
+            <select id="log_level" name="log_level">
+                <option value="">--All Levels--</option>
+                <option value="INFO">INFO</option>
+                <option value="TRACE">TRACE</option>
+                <option value="WARNING">WARNING</option>
+            </select>
+
+            <label for="keyword">Keyword:</label>
+            <input type="text" id="keyword" name="keyword" placeholder="Enter keyword">
+
+            <button type="submit">Filter</button>
+        </form>
+
+        {% if log_entries %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Log Level</th>
+                        <th>Location</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in log_entries %}
+                        <tr>
+                            <td>{{ entry.timestamp }}</td>
+                            <td>{{ entry.log_level }}</td>
+                            <td>{{ entry.location }}</td>
+                            <td>{{ entry.message }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No logs found matching the filters.</p>
+        {% endif %}
+    {% else %}
+        <p>This object is not in a supported format for filtering.</p>
+        <pre>{{ raw_content }}</pre>
+    {% endif %}
+</body>
 </html>
+

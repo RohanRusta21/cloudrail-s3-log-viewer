@@ -1,9 +1,28 @@
 from flask import Flask, render_template, request, redirect, session as flask_session
 import boto3
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for session management, can also be a static string
+
+def filter_logs(log_entries, date_from=None, date_to=None, log_level=None, keyword=None):
+    filtered = log_entries
+    if date_from:
+        filtered = [
+            entry for entry in filtered if datetime.strptime(entry["timestamp"], "%m/%d %H:%M:%S") >= date_from
+        ]
+    if date_to:
+        filtered = [
+            entry for entry in filtered if datetime.strptime(entry["timestamp"], "%m/%d %H:%M:%S") <= date_to
+        ]
+    if log_level:
+        filtered = [entry for entry in filtered if entry["log_level"] == log_level]
+    if keyword:
+        filtered = [entry for entry in filtered if keyword.lower() in entry["message"].lower()]
+    return filtered
+
+
 
 @app.route('/')
 def index():
@@ -83,9 +102,8 @@ def show_objects():
 
     return render_template('objects.html', objects=objects, bucket_name=bucket_name)
 
-@app.route('/logs')
+@app.route('/logs', methods=['GET', 'POST'])
 def show_logs():
-    # Retrieve credentials from session instead of URL parameters
     access_key = flask_session.get('access_key')
     secret_access_key = flask_session.get('secret_access_key')
     bucket_name = flask_session.get('bucket_name')
@@ -95,29 +113,86 @@ def show_logs():
     if not all([access_key, secret_access_key, bucket_name, object_key, region]):
         return redirect('/')
 
-    # Create session with AWS
+    # AWS session setup
     session = boto3.Session(
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_access_key,
         region_name=region
     )
-    
     s3_client = session.client('s3')
 
     try:
-        # Get object from S3
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
         content_type = response['ContentType']
+        raw_content = response['Body'].read().decode('utf-8')
 
+        # Parse logs only if content is text or JSON
         if content_type.startswith('text') or content_type == 'application/json':
-            logs = response['Body'].read().decode('utf-8')
+            log_entries = parse_logs(raw_content)
         else:
-            logs = "This object format is not supported for display."
+            log_entries = None
 
     except Exception as e:
         return f"Error fetching object: {str(e)}"
 
-    return render_template('logs.html', logs=logs, object_key=object_key)
+    # Apply filters if it's a POST request
+    if request.method == 'POST' and log_entries:
+        date_from = request.form.get('date_from')
+        date_to = request.form.get('date_to')
+        log_level = request.form.get('log_level')
+        keyword = request.form.get('keyword')
+
+        # Convert date range inputs to datetime objects
+        date_from = datetime.strptime(date_from, "%Y-%m-%d") if date_from else None
+        date_to = datetime.strptime(date_to, "%Y-%m-%d") if date_to else None
+
+        log_entries = filter_logs(log_entries, date_from, date_to, log_level, keyword)
+
+    return render_template(
+        'logs.html',
+        log_entries=log_entries,
+        object_key=object_key,
+        is_text_content=(log_entries is not None),
+        raw_content=raw_content if log_entries is None else None,
+        content_type=content_type
+    )
+
+
+# @app.route('/logs')
+# def show_logs():
+#     # Retrieve credentials from session instead of URL parameters
+#     access_key = flask_session.get('access_key')
+#     secret_access_key = flask_session.get('secret_access_key')
+#     bucket_name = flask_session.get('bucket_name')
+#     object_key = request.args.get('object_key')
+#     region = flask_session.get('region')
+
+#     if not all([access_key, secret_access_key, bucket_name, object_key, region]):
+#         return redirect('/')
+
+#     # Create session with AWS
+#     session = boto3.Session(
+#         aws_access_key_id=access_key,
+#         aws_secret_access_key=secret_access_key,
+#         region_name=region
+#     )
+    
+#     s3_client = session.client('s3')
+
+#     try:
+#         # Get object from S3
+#         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+#         content_type = response['ContentType']
+
+#         if content_type.startswith('text') or content_type == 'application/json':
+#             logs = response['Body'].read().decode('utf-8')
+#         else:
+#             logs = "This object format is not supported for display."
+
+#     except Exception as e:
+#         return f"Error fetching object: {str(e)}"
+
+#     return render_template('logs.html', logs=logs, object_key=object_key)
 
 if __name__ == '__main__':
     app.run(debug=True)

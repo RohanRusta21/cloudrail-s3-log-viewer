@@ -1,6 +1,6 @@
 # cloudrails3-log-viewer
 
 
+https://github.com/user-attachments/assets/ec142fac-9625-4e96-a437-4573c1bc5090
 
-Uploading Screen Recording 2024-12-20 at 12.44.34 AM.mov…
 
